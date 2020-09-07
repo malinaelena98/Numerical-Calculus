@@ -1,0 +1,168 @@
+import numpy as np
+from random import sample
+
+epsilon = pow(10, -9)
+kmax = 1000000
+
+def read_and_generate(filename):
+    file=open(filename)
+    size = file.readline()
+    size = int(size)
+    matrix_a = [[] for _ in range(size)]
+    for line in file:
+        line = line.rstrip('\n')
+        nums = line.split(', ')
+        if nums[0] != '':
+            value = float(nums[0])
+            line = int(nums[1])
+            column = int(nums[2])
+            same_position = True
+            for it in range(len(matrix_a[line])):
+                if matrix_a[line][it][1] == column:
+                    matrix_a[line][it][0] += value
+                    same_position = False
+                    break
+            if same_position:
+                matrix_a[line].append([value, column])
+
+            #sortam dupa coloana
+            matrix_a[line].sort(key=lambda row: row[1])
+
+    return matrix_a
+
+
+def generate_sparse_sim_matrix(n, sparsity):
+    l = list(range(n))
+    matrix = [[] for _ in range(n)]
+   #luam fiecare linie
+    for i in range(n - 1, 0, -1):
+       #alegem random coloanele pe care o sa avem valori diferite de 0 si vom alege mai putine decat dimensiunea normala
+        cols = sample(l, int((1 - sparsity) * (i + 1)))
+        for col in cols:
+            val = np.random.rand() * 999
+            matrix[i].append([val, col])
+            #partea sueprioara
+            if i != col:
+                matrix[col].append([val, i])
+    l.pop()
+    return matrix
+
+def get_value(A, line, col):
+    for pair in A[line]:
+        if pair[1] == col:
+            return pair[0]
+    return None
+
+def test_symmetry(matrix):
+    for line_index in range(0, len(matrix)):
+        line = matrix[line_index]
+        for pair in line:
+            value = pair[0]
+            col = pair[1]
+            transpose_val = get_value(matrix, col, line_index)
+            if transpose_val != None:
+                if value - transpose_val > epsilon:
+                    return False
+    return True
+
+
+def multiply_with_vector(matrix, vec):
+    matrix_size = len(matrix)
+    result = [0 for _ in range(matrix_size)]
+   #luam fiecare linie si inmultim elementele nenule cu corespondentul lor din vector
+    for line_index in range(matrix_size):
+        total_mul_line = 0
+        for pair in matrix[line_index]:
+            value = pair[0]
+            column_index = pair[1]
+            total_mul_line += value * vec[column_index]
+        result[line_index] = total_mul_line
+    return result
+
+
+def p_equalto_n_case(matrix):
+    if test_symmetry(matrix):
+        matrix_size=len(matrix)
+        #vectorul aleator cu norma corespunzatoare
+        vec = np.random.rand(matrix_size)
+        vec = np.dot((1 / np.linalg.norm(vec, ord=2)), vec)
+        vec_n=multiply_with_vector(matrix,vec)
+        lambd=np.inner(vec,vec_n)
+        k=0
+        while k< kmax:
+            vec = np.dot((1 / np.linalg.norm(vec_n, ord=2)), vec_n)
+            vec_n = multiply_with_vector(matrix, vec)
+            lambd = np.inner(vec, vec_n)
+            k=k+1
+            if np.linalg.norm(vec_n - lambd*vec, ord=2) < matrix_size * epsilon:
+                print("Iteration:",k)
+                return True, lambd, vec
+        return False
+
+
+def main():
+    #generam matricea random
+    matrix0 = generate_sparse_sim_matrix(600, 0.7)
+    #print(matrix0)
+
+    #generam structura rara din fisier
+    matrix=read_and_generate("a_1000.txt")
+
+    #verificam daca este simetrica
+    #print("Is the matrix symmetrical? ", test_symmetry(matrix))
+    if test_symmetry(matrix):
+        print("symmetric")
+        #determinam aproximarea celei mai mari valori proprii si a vectorul asociat pentru matricea din fisier
+        result=p_equalto_n_case(matrix)
+        if result[0]:
+            print("Valoarea proprie:",result[1])
+            print("Vectorul asociat: ",result[2])
+    else:
+        print("not symmetric")
+
+
+
+
+    #cazul cand p>n, pt matrici nerare, SVR
+    mat = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 1, 2], [3, 4, 5], [6, 7, 8]]
+
+    U,S,V = np.linalg.svd(mat)
+    print("Valori singulare:\n", S)
+
+    print('Rangul matricii:',np.linalg.matrix_rank(mat))
+
+    print('Numarul de conditionare al matricii :',np.linalg.cond(mat))
+
+    matb = np.linalg.pinv(mat)
+    print("Pseudoinversa Moore-Penrose a matricei: \n",matb)
+
+    sca = np.random.random(6)
+    x = np.dot(matb, sca)
+
+    print(" Ax = b: ", x)
+
+    rang=np.linalg.matrix_rank(mat)
+    nr_s = rang + 1
+    while nr_s > rang or nr_s < 0:
+        nr_s = int(input("s= "))
+    mat_s = None
+    for col in range(nr_s):
+        u_col = U[0:U.shape[0], col]
+        u_col = np.expand_dims(u_col, 1)
+
+        v_col = V[0:V.shape[0], col]
+        v_col = v_col[np.newaxis]
+
+        temp = np.matmul(u_col, v_col)
+        temp = temp * S[col]
+        if mat_s is None:
+            mat_s = temp
+        else:
+            mat_s = mat_s + temp
+
+    print('Norma ceruta:',np.linalg.norm(mat - mat_s, np.inf))
+
+
+
+if __name__ == '__main__':
+    main()
