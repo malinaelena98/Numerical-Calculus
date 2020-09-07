@@ -1,0 +1,136 @@
+
+def epsilion():
+    eps = 1.0
+    while eps + 1 > 1:
+        eps /= 2
+    eps *= 2
+    return eps
+
+def read_and_generate(filename):
+
+    file=open(filename)
+    size = file.readline()
+    size = int(size)
+    matrix_a = [[] for _ in range(size)]
+    # pentru a numara elementele nenule de pe fiecare linie
+    non_zeros = [0 for i in range(0, size)]
+    for line in file:
+        line = line.rstrip('\n')
+        nums = line.split(', ')
+        if nums[0] != '':
+            value = float(nums[0])
+            line = int(nums[1])
+            column = int(nums[2])
+            same_position = True
+            for it in range(len(matrix_a[line])):
+                if matrix_a[line][it][1] == column:
+                    matrix_a[line][it][0] += value
+                    same_position = False
+                    break
+            if same_position:
+                matrix_a[line].append([value, column])
+                non_zeros[line] += 1
+            if non_zeros[line] > 11:
+                print("More than 10 non zeros elements at line:", line)
+                return
+
+            #sortam dupa coloana
+            matrix_a[line].sort(key=lambda row: row[1])
+
+
+    return matrix_a
+
+def read_and_generate2(filename):
+
+    file=open(filename)
+    size = file.readline()
+    size = int(size)
+    matrix_a = [[] for _ in range(size)]
+    for line in file:
+        line = line.rstrip('\n')
+        nums = line.split(', ')
+        if nums[0] != '':
+            value = float(nums[0])
+            line = int(nums[1])
+            column = int(nums[2])
+            same_position = True
+            for it in range(len(matrix_a[line])):
+                if matrix_a[line][it][1] == column:
+                    matrix_a[line][it][0] += value
+                    same_position = False
+                    break
+            if same_position:
+                matrix_a[line].append([value, column])
+
+            #sortam dupa coloana
+            matrix_a[line].sort(key=lambda row: row[1])
+
+    return matrix_a
+
+
+def equal(matrix_a, matrix_b):
+    eps=epsilion()
+    size=len(matrix_a)
+    for i in range(size):
+        for value,j in matrix_b[i]:
+            for it in range(len(matrix_a[i])):
+                if matrix_a[i][it][1]==j:
+                    diff=matrix_a[i][it][0]-value
+                    if diff>eps:
+                        return False
+    return True
+
+
+def add(matrix_a, matrix_b):
+    size=len(matrix_a)
+    result=matrix_a
+    for i in range(size):
+        for value,j in matrix_b[i]:
+            empty_spot=True
+            for it in range(len(result[i])):
+                if result[i][it][1]==j:
+                    result[i][it][0]+=value
+                    empty_spot=False
+            if empty_spot:
+                result[i].append([value,j])
+       #sortam dupa coloana
+        result[i].sort(key=lambda row: row[1])
+    return result
+
+
+
+def multiply(matrix_A,matrix_B):
+    size = len(matrix_A)
+    result = [[] for _ in range(size)]
+    for line in range(size):
+        for column in range(size):
+            temp_sum = 0
+            for value1,col_index1 in matrix_A[line]:
+                for value2,col_index2 in matrix_B[col_index1]:
+                    if col_index2==column:
+                        temp_sum+=value1*value2
+
+            if temp_sum!=0:
+                result[line].append([temp_sum, column])
+    return result
+
+
+
+if __name__ == '__main__':
+    # adunare
+    matrix_a = read_and_generate("a.txt")
+    matrix_b = read_and_generate("b.txt")
+    print(matrix_a)
+    matrix_add = add(matrix_a, matrix_b)
+    print("A+B ", matrix_add)
+    matrix_aplusb = read_and_generate2("aplusb.txt")
+    matrix_aorib = read_and_generate2("aorib.txt ")
+    # inmultire
+    matrix_A = read_and_generate("a.txt")
+    matrix_B = read_and_generate("b.txt")
+    matrix_multiply = multiply(matrix_A, matrix_B)
+    print("A*B ", matrix_multiply)
+    # matrix_a+matrix_b=aplusb?
+    print("a.txt+b.txt=aplusb.txt? ", equal(matrix_add, matrix_aplusb))
+    # matrix_A*matrix_B=aorib?
+    print("a.txt+b.txt=aorib.txt? ", equal(matrix_multiply, matrix_aorib))
