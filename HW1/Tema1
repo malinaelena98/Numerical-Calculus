@@ -1,0 +1,35 @@
+import numpy as np
+
+def problema1():
+    m = 0
+    if 1 + (10**-m) == 1:
+        return m
+    m = m + 1
+
+print(problema1())
+
+def problema2():
+    u = problema1()
+    x = 10 ** 1
+    y = 10 ** -2
+    z = 10 ** -4
+    print((x * y) * z, x * (y * z))
+
+
+def problema3(A, B, n):
+
+    C = np.zeros(n, n)
+    sum = np.zeros(2 ** int(np.log2(n)), n)
+    for i in range(1,n // int(np.log2(n))):
+        for j in range(1, 2 ** int(np.log2(n))):
+            k = int(np.log2(j))
+            Bi = B[(i-1)*int(np.log2(n)):i*int(np.log2(n))]
+            Bii = Bi[k]
+            sum[j] = np.logical_or(sum[j - 2 ** k], Bii)
+        Ci = np.zeros((n, n))
+        for r in range(n):
+            Aii= A[:, (i-1)*int(np.log2(n)):i*int(np.log2(n))][r]
+            Ci[r] = sum[Aii]
+    return C
+
+print(problema3(np.random.randint(2), np.random.randint(2), 8))
